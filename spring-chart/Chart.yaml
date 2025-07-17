@@ -1,0 +1,5 @@
+apiVersion: v2
+name: spring-chart
+description: A Spring Chart For LGCMS
+type: application
+version: 0.0.1

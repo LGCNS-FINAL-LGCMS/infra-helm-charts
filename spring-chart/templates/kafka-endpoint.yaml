@@ -1,0 +1,13 @@
+{{ if .Values.kafka.enable }}
+apiVersion: v1
+kind: Endpoints
+{{ with .Values.kafka }}
+metadata:
+  name: {{ .name }}
+subsets:
+  - addresses:
+      - ip: {{ .ip }}
+    ports:
+      - port: {{ .port }}
+{{ end }}
+{{ end }}

@@ -6,6 +6,10 @@ springContainer:
   version: 0.0.2
   imagePullPolicy: IfNotPresent
   profile: dev
+  aws:
+    bedrock_access_key_id: ""
+    bearer_token_bedrock: ""
+    region: ""
 config:
   enable: false
   configData: |

@@ -22,6 +22,12 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: {{ .profile }}
+            - name: AWS_ACCESS_KEY_ID
+              value: {{ .aws.bedrock_access_key_id }}
+            - name: AWS_BEARER_TOKEN_BEDROCK
+              value: {{ .aws.bearer_token_bedrock }}
+            - name: AWS_REGION
+              value: {{ .aws.region }}
           ports:
             - containerPort: 8080
           {{ end }}

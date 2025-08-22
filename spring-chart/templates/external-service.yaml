@@ -1,5 +1,19 @@
 {{- $root := . }}
 {{ range .Values.externalService }}
+{{- if .externalName }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}
+  namespace: {{ $root.Values.namespace }}
+spec:
+  type: ExternalName
+  externalName: {{ .externalName }}
+  ports:
+    - protocol: TCP
+      port: {{ .internalPort }}
+      targetPort: {{ .externalPort }}
+{{- else if .externalIp }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -22,5 +36,6 @@ subsets:
       - ip: {{ .externalIp }}
     ports:
       - port: {{ .externalPort }}
+{{ end }}
 ---
 {{ end }}

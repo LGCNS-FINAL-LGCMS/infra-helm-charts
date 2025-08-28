@@ -1,0 +1,15 @@
+name: nginx
+namespace: default
+replicas: 1
+nginxContainer:
+  image: nginx:stable
+  version: 0.0.2
+  imagePullPolicy: IfNotPresent
+service:
+  http:
+    type: NodePort
+    port: 80
+  https:
+    type: NodePort
+    port: 443
+  type: ClusterIP

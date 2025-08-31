@@ -10,6 +10,14 @@ springContainer:
     bedrock_access_key_id: ""
     bearer_token_bedrock: ""
     region: ""
+  resources:
+    enabled: false
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
 config:
   enable: false
   configData: |
@@ -28,3 +36,23 @@ externalService: []
 #    externalIp: localhost
 #    externalPort: 6379
 #    type: ClusterIP # CNAME으로 연결할 경우 ExternalName
+hpa:
+  enabled: false
+#  minReplicas: 1
+#  maxReplicas: 10
+#  cpu:
+#    enabled: false
+#    targetAverageUtilization: 70
+#  memory:
+#    enabled: false
+#    targetAverageUtilization: 80
+  behavior:
+    enabled: false
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      percent: 100
+      periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      percent: 50
+      periodSeconds: 60

@@ -39,6 +39,8 @@ spec:
               value: {{ .aws.region }}
           ports:
             - containerPort: 8080
+              protocol: TCP
+              name: http
           {{ end }}
           {{ if or .Values.config.enable .Values.secret.enable }}
           volumeMounts:

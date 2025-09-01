@@ -56,3 +56,9 @@ hpa:
       stabilizationWindowSeconds: 300
       percent: 50
       periodSeconds: 60
+monitor:
+  enabled: false
+  service:
+    interval: 10s
+  pod:
+    interval: 10s

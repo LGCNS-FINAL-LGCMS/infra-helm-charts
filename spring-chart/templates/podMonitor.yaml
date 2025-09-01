@@ -1,0 +1,18 @@
+{{ if .Values.monitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ .Values.name }}-pod-monitor
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.name }}
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+  podMetricsEndpoints:
+  - port: http
+    path: /actuator/prometheus
+    interval: {{ .Values.monitor.pod.interval }}
+{{ end }}

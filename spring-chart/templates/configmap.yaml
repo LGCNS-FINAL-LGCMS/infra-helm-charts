@@ -7,4 +7,17 @@ metadata:
 data:
   application-config.yaml: |
 {{ .Values.config.configData | nindent 4 }}
+---
+{{- range .Values.subsets }}
+{{ if and .config .config.configData }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Values.name }}-config-{{ .name }}
+  namespace: {{ $.Values.namespace }}
+data:
+    application-config.yaml: |
+{{ .config.configData | nindent 4 }}
+{{ end }}
+{{ end }}
 {{ end }}

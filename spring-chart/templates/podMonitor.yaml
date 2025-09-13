@@ -1,4 +1,29 @@
-{{ if .Values.monitor.enabled }}
+{{- if .Values.subsets }}
+{{- range .Values.subsets }}
+{{ if $.Values.monitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ $.Values.name }}-{{ .name }}-pod-monitor
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app: {{ $.Values.name }}
+    version: {{ .name }}
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: {{ $.Values.name }}
+      version: {{ .name }}
+  podMetricsEndpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: {{ if and .monitor .monitor.pod .monitor.pod.interval }}{{ .monitor.pod.interval }}{{ else }}{{ $.Values.monitor.pod.interval }}{{ end }}
+{{- end }}
+{{- end }}
+{{- else }}
+{{ if $.Values.monitor.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
@@ -14,5 +39,6 @@ spec:
   podMetricsEndpoints:
   - port: http
     path: /actuator/prometheus
-    interval: {{ .Values.monitor.pod.interval }}
-{{ end }}
+    interval: {{ $.Values.monitor.pod.interval }}
+{{- end }}
+{{- end }}

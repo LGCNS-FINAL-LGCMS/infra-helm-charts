@@ -1,3 +1,96 @@
+{{- if .Values.subsets }}
+{{- range .Values.subsets }}
+{{- $subsetHpa := .hpa | default dict }}
+{{- $subsetResources := .resources | default dict }}
+{{- $subsetResourcesRequests := $subsetResources.requests | default dict }}
+{{- $subsetResourcesLimits := $subsetResources.limits | default dict }}
+{{- $subsetAws := .aws | default dict }}
+{{- $subsetConfig := .config | default dict }}
+{{- $subsetSecret := .secret | default dict }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $.Values.name }}-{{ .name }}
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app: {{ $.Values.name }}
+    version: {{ .name }}
+spec:
+  {{- if not $subsetHpa.enabled | default $.Values.hpa.enabled }}
+  replicas: {{ .replicas | default $.Values.replicas }}
+  {{- end }}
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: {{ $.Values.name }}
+      version: {{ .name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $.Values.name }}
+        version: {{ .name }}
+    spec:
+      containers:
+        - name: spring-server
+          image: {{ $.Values.springContainer.image }}:{{ .imageVersion | default $.Values.springContainer.version }}
+          imagePullPolicy: {{ .imagePullPolicy | default $.Values.springContainer.imagePullPolicy }}
+          {{- if $subsetResources.enabled | default $.Values.springContainer.resources.enabled }}
+          resources:
+            requests:
+              memory: {{ $subsetResourcesRequests.memory | default $.Values.springContainer.resources.requests.memory | default "512Mi" }}
+              cpu: {{ $subsetResourcesRequests.cpu | default $.Values.springContainer.resources.requests.cpu | default "250m" }}
+            limits:
+              memory: {{ $subsetResourcesLimits.memory | default $.Values.springContainer.resources.limits.memory | default "1Gi" }}
+              cpu: {{ $subsetResourcesLimits.cpu | default $.Values.springContainer.resources.limits.cpu | default "500m" }}
+          {{- end }}
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: {{ .profile | default $.Values.springContainer.profile }}
+            - name: AWS_ACCESS_KEY_ID
+              value: {{ $subsetAws.bedrock_access_key_id | default $.Values.springContainer.aws.bedrock_access_key_id }}
+            - name: AWS_BEARER_TOKEN_BEDROCK
+              value: {{ $subsetAws.bearer_token_bedrock | default $.Values.springContainer.aws.bearer_token_bedrock }}
+            - name: AWS_REGION
+              value: {{ $subsetAws.region | default $.Values.springContainer.aws.region }}
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: http
+          {{- if or ( $subsetConfig.enable | default $.Values.config.enable) ($subsetSecret.enable | default $.Values.secret.enable) }}
+          volumeMounts:
+            {{- if $subsetConfig.enable | default $.Values.config.enable }}
+            - mountPath: /etc/config
+              name: configmap
+              readOnly: true
+            {{- end }}
+            {{- if $subsetSecret.enable | default $.Values.secret.enable }}
+            - mountPath: /etc/secret
+              name: secret
+              readOnly: true
+            {{- end }}
+          {{- end }}
+      {{- if or ($subsetConfig.enable | default $.Values.config.enable) ($subsetSecret.enable | default $.Values.secret.enable) }}
+      volumes:
+        {{- if $subsetConfig.enable | default $.Values.config.enable }}
+        - name: configmap
+          configMap:
+            name: {{ if $subsetConfig.configData }}{{ $.Values.name }}-config-{{ .name }}{{ else }}{{ $.Values.name }}-config{{ end }}
+            items:
+              - key: application-config.yaml
+                path: application-config.yaml
+        {{- end }}
+        {{- if $subsetSecret.enable | default $.Values.secret.enable }}
+        - name: secret
+          secret:
+            secretName: {{ if $subsetSecret.secretData }}{{ $.Values.name }}-secret-{{ .name }}{{ else }}{{ $.Values.name }}-secret{{ end }}
+            items:
+              - key: application-secret.yaml
+                path: application-secret.yaml
+        {{- end }}
+      {{- end }}
+---
+{{- end }}
+{{- else }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,7 +114,7 @@ spec:
           {{ with .Values.springContainer }}
           image: {{ .image }}:{{ .version }}
           imagePullPolicy: {{ .imagePullPolicy }}
-          {{ if .resources.enabled }}
+          {{- if .resources.enabled }}
           resources:
             requests:
               memory: {{ .resources.requests.memory | default "512Mi" }}
@@ -29,7 +122,7 @@ spec:
             limits:
               memory: {{ .resources.limits.memory | default "1Gi" }}
               cpu: {{ .resources.limits.cpu | default "500m" }}
-          {{ end }}
+          {{- end }}
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: {{ .profile }}
@@ -43,36 +136,37 @@ spec:
             - containerPort: 8080
               protocol: TCP
               name: http
-          {{ end }}
-          {{ if or .Values.config.enable .Values.secret.enable }}
+          {{- end }}
+          {{- if or .Values.config.enable .Values.secret.enable }}
           volumeMounts:
-            {{ if .Values.config.enable }}
+            {{- if .Values.config.enable }}
             - mountPath: /etc/config
               name: configmap
               readOnly: true
-            {{ end }}
-            {{ if .Values.secret.enable }}
+            {{- end }}
+            {{- if .Values.secret.enable }}
             - mountPath: /etc/secret
               name: secret
               readOnly: true
-            {{ end }}
-          {{ end }}
-      {{ if or .Values.config.enable .Values.secret.enable }}
+            {{- end }}
+          {{- end }}
+      {{- if or .Values.config.enable .Values.secret.enable }}
       volumes:
-        {{ if .Values.config.enable }}
+        {{- if .Values.config.enable }}
         - name: configmap
           configMap:
             name: {{ .Values.name }}-config
             items:
               - key: application-config.yaml
                 path: application-config.yaml
-        {{ end }}
-        {{ if .Values.secret.enable }}
+        {{- end }}
+        {{- if .Values.secret.enable }}
         - name: secret
           secret:
             secretName: {{ .Values.name }}-secret
             items:
               - key: application-secret.yaml
                 path: application-secret.yaml
-        {{ end }}
-      {{ end }}
+        {{- end }}
+      {{- end }}
+{{- end }}

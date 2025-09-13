@@ -1,0 +1,15 @@
+{{- if .Values.subsets }}
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ .Values.name }}-destination-rule
+  namespace: {{ .Values.namespace }}
+spec:
+  host: {{ .Values.name }}.{{ .Values.namespace }}.svc.cluster.local
+  subsets:
+    {{- range .Values.subsets }}
+    - name: {{ .name }}
+      labels:
+        version: {{ .name }}
+    {{- end }}
+{{- end }}

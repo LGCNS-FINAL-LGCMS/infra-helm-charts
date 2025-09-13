@@ -19,12 +19,12 @@ springContainer:
       cpu: "500m"
       memory: "1Gi"
 config:
-  enable: false
+  enable: true
   configData: |
     server:
       port: 8080
 secret:
-  enable: false
+  enable: true
   secretData: |
     secret: this-is-secret
 service:
@@ -62,3 +62,21 @@ monitor:
     interval: 10s
   pod:
     interval: 10s
+
+subsets: []
+#  - name: v1
+#    imageVersion: 0.1
+#    weight: 70
+#    config:
+#      configData: |
+#        server:
+#        port: 8080
+#        spring:
+#        profiles:
+#            active: dev
+#    secret:
+#      secretData: |
+#        secret: this-is-secret-v2
+#  - name: v2
+#    imageVersion: 0.2
+#    weight: 30

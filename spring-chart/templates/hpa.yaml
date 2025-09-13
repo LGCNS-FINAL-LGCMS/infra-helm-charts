@@ -1,4 +1,67 @@
-{{ if .Values.hpa.enabled }}
+{{- if .Values.subsets }}
+{{- range .Values.subsets }}
+{{- $subsetHpa := .hpa | default dict }}
+{{- $defaultHpa := $.Values.hpa | default dict }}
+{{- if $subsetHpa.enabled | default $defaultHpa.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $.Values.name }}-{{ .name }}-hpa
+  namespace: {{ $.Values.namespace }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $.Values.name }}-{{ .name }}
+  minReplicas: {{ $subsetHpa.minReplicas | default $defaultHpa.minReplicas | default 1 }}
+  maxReplicas: {{ $subsetHpa.maxReplicas | default $defaultHpa.maxReplicas | default 10 }}
+  metrics:
+  {{- $subsetCpu := $subsetHpa.cpu | default dict }}
+  {{- $defaultCpu := $defaultHpa.cpu | default dict }}
+  {{- if $subsetCpu.enabled | default $defaultCpu.enabled }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $subsetCpu.targetAverageUtilization | default $defaultCpu.targetAverageUtilization | default 70 }}
+  {{- end }}
+  {{- $subsetMemory := $subsetHpa.memory | default dict }}
+  {{- $defaultMemory := $defaultHpa.memory | default dict }}
+  {{- if $subsetMemory.enabled | default $defaultMemory.enabled }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ $subsetMemory.targetAverageUtilization | default $defaultMemory.targetAverageUtilization | default 80 }}
+  {{- end }}
+  {{- $subsetBehavior := $subsetHpa.behavior | default dict }}
+  {{- $defaultBehavior := $defaultHpa.behavior | default dict }}
+  {{- if $subsetBehavior.enabled | default $defaultBehavior.enabled }}
+  behavior:
+    {{- $subsetScaleUp := $subsetBehavior.scaleUp | default dict }}
+    {{- $defaultScaleUp := $defaultBehavior.scaleUp | default dict }}
+    scaleUp:
+      stabilizationWindowSeconds: {{ $subsetScaleUp.stabilizationWindowSeconds | default $defaultScaleUp.stabilizationWindowSeconds | default 60 }}
+      policies:
+        - type: Percent
+          value: {{ $subsetScaleUp.percent | default $defaultScaleUp.percent | default 100 }}
+          periodSeconds: {{ $subsetScaleUp.periodSeconds | default $defaultScaleUp.periodSeconds | default 60 }}
+    {{- $subsetScaleDown := $subsetBehavior.scaleDown | default dict }}
+    {{- $defaultScaleDown := $defaultBehavior.scaleDown | default dict }}
+    scaleDown:
+      stabilizationWindowSeconds: {{ $subsetScaleDown.stabilizationWindowSeconds | default $defaultScaleDown.stabilizationWindowSeconds | default 300 }}
+      policies:
+        - type: Percent
+          value: {{ $subsetScaleDown.percent | default $defaultScaleDown.percent | default 50 }}
+          periodSeconds: {{ $subsetScaleDown.periodSeconds | default $defaultScaleDown.periodSeconds | default 60 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- else }}
+{{- if .Values.hpa.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -13,23 +76,23 @@ spec:
   minReplicas: {{ .minReplicas | default 1 }}
   maxReplicas: {{ .maxReplicas | default 10 }}
   metrics:
-  {{ if .cpu.enabled }}
+  {{- if .cpu.enabled }}
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
           averageUtilization: {{ .cpu.targetAverageUtilization | default 70 }}
-  {{ end }}
-  {{ if .memory.enabled }}
+  {{- end }}
+  {{- if .memory.enabled }}
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
           averageUtilization: {{ .memory.targetAverageUtilization | default 80 }}
-  {{ end }}
-  {{ if .behavior.enabled }}
+  {{- end }}
+  {{- if .behavior.enabled }}
   behavior:
     scaleUp:
       stabilizationWindowSeconds: {{ .behavior.scaleUp.stabilizationWindowSeconds | default 60 }}
@@ -43,6 +106,7 @@ spec:
         - type: Percent
           value: {{ .behavior.scaleDown.percent | default 50 }}
           periodSeconds: {{ .behavior.scaleDown.periodSeconds | default 60 }}
-  {{ end }}
-  {{ end }}
-{{ end }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
